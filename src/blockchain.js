@@ -66,7 +66,7 @@ class Blockchain {
         return new Promise(async (resolve, reject) => {
             let previousBlock = await this.getBlockByHeight(this.height)
             if ( previousBlock ) {
-                block.previousBlockHash = previousBlock ? previousBlock.hash : null
+                block.previousBlockHash = previousBlock.hash
                 block.height = previousBlock.height + 1
             } else {
                 block.height = 0
@@ -179,10 +179,16 @@ class Blockchain {
         return new Promise(async (resolve, reject) => {
             resolve(
                 this.chain
-                .map(b => b.validate() ? null : `Block ${b.hash} is invalid`)
-                .filter(e => !!e)
+                .map(b => this.validateBlock(b)  ? null : `Block ${b.hash} is invalid`)
+                .filter(e => e)
             )
         });
+    }
+
+    async validateBlock(block) {
+        const preBlock = await this.getBlockByHash(block.previousBlockHash)
+        if(!preBlock) return true
+        return await preBlock.validate()
     }
 
 }
