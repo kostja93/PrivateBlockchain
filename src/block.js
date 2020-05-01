@@ -38,7 +38,7 @@ class Block {
     validate() {
         let self = this;
         return new Promise((resolve, reject) => {
-            let newHash = SHA256(JSON.stringify(self))
+            let newHash = SHA256(JSON.stringify(self)).toString()
             if (self.hash == newHash)
                 resolve(true)
             else
@@ -58,7 +58,7 @@ class Block {
     getBData() {
         let jsonFormatedBody = hex2ascii(this.body)
         let body = JSON.parse(jsonFormatedBody)
-        if (body.data && body.data != 'Genesis Block') return body
+        if (body.data != 'Genesis Block') return body
     }
 
 }

@@ -64,13 +64,15 @@ class Blockchain {
     _addBlock(block) {
         let self = this;
         return new Promise(async (resolve, reject) => {
-            let previousBlock = await this.getBlockByHeight(block.height - 1)
+            let previousBlock = await this.getBlockByHeight(this.height)
             if ( previousBlock ) {
                 block.previousBlockHash = previousBlock ? previousBlock.hash : null
-                block.time = new Date().getTime().toString().slice(0, -3)
                 block.height = previousBlock.height + 1
-                block.hash = SHA256(JSON.stringify(block))
+            } else {
+                block.height = 0
             }
+            block.time = new Date().getTime().toString().slice(0, -3)
+            block.hash = SHA256(JSON.stringify(block)).toString
             this.chain.push(block)
             this.height++
             resolve(block)
@@ -112,10 +114,10 @@ class Blockchain {
         let self = this;
         return new Promise(async (resolve, reject) => {
             let messageTime = parseInt(message.split(':')[1])
-            let currentTime = parseInt(new Date.getTime().toString().slice(0, -3))
+            let currentTime = parseInt(new Date().getTime().toString().slice(0, -3))
             if ( (currentTime - messageTime) > 300 ) return reject(Error('More than 5 minutes'))
             if ( !bitcoinMessage.verify(message, address, signature) ) return reject(Error('wrong signature'))
-            resolve( await _addBlock(new BlockClass({ address, message, signature, star })) )
+            resolve( await this._addBlock(new BlockClass.Block({ address, message, signature, star })) )
         });
     }
 
@@ -158,11 +160,10 @@ class Blockchain {
     getStarsByWalletAddress (address) {
         let self = this;
         return new Promise((resolve, reject) => {
-            resolve( 
-                this.chain
-                .filter(b => b.getBData().address && b.getBData().address == address)
-                .map(b => b.getBData().star)
-            )
+            resolve( this.chain.filter(b => b.getBData() && b.getBData().address && b.getBData().address == address)
+              .map(b => {
+                return { owner: address, star: b.getBData().star }
+              }) )
         });
     }
 
