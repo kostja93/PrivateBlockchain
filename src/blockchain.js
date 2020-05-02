@@ -72,7 +72,7 @@ class Blockchain {
                 block.height = 0
             }
             block.time = new Date().getTime().toString().slice(0, -3)
-            block.hash = SHA256(JSON.stringify(block)).toString
+            block.hash = SHA256(JSON.stringify(block)).toString()
             this.chain.push(block)
             this.height++
             resolve(block)
@@ -177,18 +177,15 @@ class Blockchain {
         let self = this;
         let errorLog = [];
         return new Promise(async (resolve, reject) => {
-            resolve(
-                this.chain
-                .map(b => this.validateBlock(b)  ? null : `Block ${b.hash} is invalid`)
-                .filter(e => e)
-            )
+            let previousBlock = null
+            this.chain.map(async (b) => {
+                let validBlock = await b.validate()
+                if (!validBlock) errorLog.push(`Block ${b.hash} is invalid!`)
+                if ( previousBlock && previousBlock.hash != b.previousBlockHash ) errorLog.push(`${previousBlock.hash} is not the previous block!`)
+                previousBlock = b
+            })
+            resolve(errorLog)
         });
-    }
-
-    async validateBlock(block) {
-        const preBlock = await this.getBlockByHash(block.previousBlockHash)
-        if(!preBlock) return true
-        return await preBlock.validate()
     }
 
 }
